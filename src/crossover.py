@@ -5,15 +5,15 @@ import numpy as np
 
 class Crossover:
     def __init__(self, seed=None) -> None:
-        self.seed = seed
+        pass
 
     def __call__(self, ch1, ch2):
         pass
 
 
 class OnePointCrossover(Crossover):
-    def __init__(self, seed=None) -> None:
-        super().__init__(seed=seed)
+    def __init__(self) -> None:
+        super().__init__()
 
     def __call__(self, ch1, ch2):
         ch1_, ch2_ = deepcopy(ch1), deepcopy(ch2)
@@ -28,8 +28,8 @@ class OnePointCrossover(Crossover):
 
 
 class TwoPointCrossover(Crossover):
-    def __init__(self, seed=None) -> None:
-        super().__init__(seed=seed)
+    def __init__(self) -> None:
+        super().__init__()
 
     def __call__(self, ch1, ch2):
         ch1_, ch2_ = deepcopy(ch1), deepcopy(ch2)
@@ -46,8 +46,8 @@ class TwoPointCrossover(Crossover):
 
 
 class PartiallyMappedCrossover(Crossover):
-    def __init__(self, seed=None) -> None:
-        super().__init__(seed=seed)
+    def __init__(self) -> None:
+        super().__init__()
 
     def __call__(self, ch1, ch2):
         ch1_, ch2_ = deepcopy(ch1), deepcopy(ch2)

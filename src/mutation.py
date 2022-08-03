@@ -4,16 +4,16 @@ import numpy as np
 
 
 class Mutation:
-    def __init__(self, seed=None) -> None:
-        self.seed = seed
+    def __init__(self) -> None:
+        pass
 
     def __call__(self, chromosome):
         pass
 
 
 class BitFlipMutation(Mutation):
-    def __init__(self, seed=None) -> None:
-        super().__init__(seed=seed)
+    def __init__(self) -> None:
+        super().__init__()
 
     def __call__(self, chromosome):
         ch = deepcopy(chromosome)
@@ -25,8 +25,8 @@ class BitFlipMutation(Mutation):
 
 
 class SwapMutation(Mutation):
-    def __init__(self, seed=None) -> None:
-        super().__init__(seed=seed)
+    def __init__(self) -> None:
+        super().__init__()
 
     def __call__(self, chromosome):
         ch = deepcopy(chromosome)

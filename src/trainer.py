@@ -1,3 +1,4 @@
+from time import time
 import numpy as np
 
 from chromosome import BinaryChromosome, IntegerChromosome, PermutationChromosome, RealNumberChromosome
@@ -16,6 +17,8 @@ class Trainer:
         mutation='auto',
         crossover_rate=0.9,
         mutation_rate=0.1,
+        min_value=None,
+        max_value=None,
         seed=None,
         population=None
     ) -> None:
@@ -29,6 +32,8 @@ class Trainer:
         self.mutation = mutation
         self.crossover_rate = crossover_rate
         self.mutation_rate = mutation_rate
+        self.min_value = min_value
+        self.max_value = max_value
         self.seed = seed
         self.population = population
 
@@ -39,22 +44,28 @@ class Trainer:
     def populate(self):
         if self.chromosome_type == 'binary':
             self.population = np.array([
-                BinaryChromosome(length=self.chromosome_length, seed=self.seed)
+                BinaryChromosome(length=self.chromosome_length)
                 for _ in range(self.pop_size)
             ])
         elif self.chromosome_type == 'integer':
             self.population = np.array([
-                IntegerChromosome(length=self.chromosome_length, seed=self.seed)
-                for _ in range(self.pop_size)
+                IntegerChromosome(
+                    length=self.chromosome_length,
+                    min_value=self.min_value,
+                    max_value=self.max_value
+                ) for _ in range(self.pop_size)
             ])
         elif self.chromosome_type == 'real':
             self.population = np.array([
-                RealNumberChromosome(length=self.chromosome_length, seed=self.seed)
-                for _ in range(self.pop_size)
+                RealNumberChromosome(
+                    length=self.chromosome_length,
+                    min_value=self.min_value,
+                    max_value=self.max_value
+                ) for _ in range(self.pop_size)
             ])
         elif self.chromosome_type == 'permutation':
             self.population = np.array([
-                PermutationChromosome(length=self.chromosome_length, seed=self.seed)
+                PermutationChromosome(length=self.chromosome_length)
                 for _ in range(self.pop_size)
             ])
 
@@ -63,26 +74,26 @@ class Trainer:
 
     def build_operators(self):
         if self.selection == 'rws':
-            self.selection = RouletteWheelSelection(seed=self.seed)
+            self.selection = RouletteWheelSelection()
         elif self.selection == 'tournament':
-            self.selection = TournamentSelection(seed=self.seed)
+            self.selection = TournamentSelection()
 
         if self.crossover == 'auto':
             if self.chromosome_type in ('binary', 'integer', 'real'):
-                self.crossover = TwoPointCrossover(seed=self.seed)
+                self.crossover = TwoPointCrossover()
             elif self.chromosome_type == 'permutation':
-                self.crossover = PartiallyMappedCrossover(seed=self.seed)
+                self.crossover = PartiallyMappedCrossover()
 
         if self.mutation == 'auto':
             if self.chromosome_type == 'binary':
-                self.mutation = BitFlipMutation(seed=self.seed)
+                self.mutation = BitFlipMutation()
             elif self.chromosome_type in ('integer', 'real', 'permutation'):
-                self.mutation = SwapMutation(seed=self.seed)
-
+                self.mutation = SwapMutation()
 
     def run(self, num_generations):
         history = {'best': [], 'average': []}
-        best_gen, best_chromosome, best_fitness = 0, None, -float('inf')
+        best_gen, self.best_chromosome, self.best_fitness = 0, None, -float('inf')
+        start = time()
 
         fitness = np.array([
             self.fitness_function(pop) for pop in self.population
@@ -113,22 +124,28 @@ class Trainer:
 
             best_fitness_this_gen, average_fitness = fitness.max(), fitness.mean()
             msg = ' ---- '.join([
-                f'Iteration   [{gen}]',
-                f'Best Fitness: {best_fitness_this_gen:.2f}',
-                f'Average Fitness: {average_fitness:.2f}'
+                f'Iteration [{gen}]',
+                f'Best fitness: {best_fitness_this_gen:.4f}',
+                f'Average fitness: {average_fitness:.4f}'
             ])
             print(msg)
 
             history['best'].append(best_fitness_this_gen)
             history['average'].append(average_fitness)
 
-            if best_fitness_this_gen >= best_fitness:
+            if best_fitness_this_gen >= self.best_fitness:
                 best_gen = gen
-                best_fitness = best_fitness_this_gen
-                best_chromosome = self.population[fitness.argmax()]
+                self.best_fitness = best_fitness_this_gen
+                self.best_chromosome = self.population[fitness.argmax()]
 
-        print('Best generation:', best_gen)
-        print('Best fitness   :', best_fitness)
-        print('Best chromosome:', best_chromosome)
+        print('Best generation :', best_gen)
+        print('Best fitness    : %.4f' % self.best_fitness)
+        print('Best chromosome :', self.best_chromosome)
+
+        finish = time()
+        elapsed_time = finish - start
+        average_time = elapsed_time / num_generations
+        print(f'Finished in {elapsed_time:.2f}s (avg {average_time:.2f}s/gen)')
 
         return history
+

@@ -14,9 +14,9 @@ mutation_rate = 0.1
 
 np.random.seed(seed)
 N = 10
-cap = int(2.5 * N)
 weights = np.random.choice(np.arange(9) + 1, N, replace=True)
 values = np.random.permutation(N) + 1
+cap = int(0.3 * weights.sum())
 
 print('Cap     :', cap)
 print('Weights :', weights)

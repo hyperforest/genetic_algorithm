@@ -11,37 +11,20 @@ def _check_genotype_is_array(genotype):
         raise TypeError(msg)
 
 
-def _check_operator(operator):
-    ok = (
-        isinstance(operator, str)
-        or callable(operator)
-    )
-    if not ok:
-        msg = f'{operator.__name__} should be a str or callable'
-        raise TypeError(msg)
-
-
 class Chromosome:
-    def __init__(self, seed=None) -> None:
-        self.seed = seed
+    def __init__(self) -> None:
+        pass
 
     def build_genotype(self, genotype=None):
         raise NotImplementedError('`build_genotype` method has not declared')
-
-    def set_operators(self, crossover, mutation):
-        _check_operator(crossover)
-        _check_operator(mutation)
-
-        self.crossover = crossover
-        self.mutate = mutation
 
     def __repr__(self):
         return self.genotype.__repr__()
 
 
 class BinaryChromosome(Chromosome):
-    def __init__(self, length, seed=None) -> None:
-        super().__init__(seed=seed)
+    def __init__(self, length) -> None:
+        super().__init__()
         self.length = length
 
     def build_genotype(self, genotype=None):
@@ -53,8 +36,8 @@ class BinaryChromosome(Chromosome):
 
     
 class IntegerChromosome(Chromosome):
-    def __init__(self, length, min_value=0, max_value=(2 ** 31), seed=None) -> None:
-        super().__init__(seed=seed)
+    def __init__(self, length, min_value=0, max_value=(2 ** 31)) -> None:
+        super().__init__()
         self.length = length
         self.min_value = min_value
         self.max_value = max_value
@@ -70,8 +53,8 @@ class IntegerChromosome(Chromosome):
 
 
 class RealNumberChromosome(Chromosome):
-    def __init__(self, length, min_value=0., max_value=1., seed=None) -> None:
-        super().__init__(seed=seed)
+    def __init__(self, length, min_value=0., max_value=1.) -> None:
+        super().__init__()
         self.length = length
         self.min_value = min_value
         self.max_value = max_value
@@ -88,8 +71,8 @@ class RealNumberChromosome(Chromosome):
 
 
 class PermutationChromosome(Chromosome):
-    def __init__(self, length, seed=None) -> None:
-        super().__init__(seed=seed)
+    def __init__(self, length) -> None:
+        super().__init__()
         self.length = length
 
     def build_genotype(self, genotype=None):
