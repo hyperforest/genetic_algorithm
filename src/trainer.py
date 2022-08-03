@@ -93,13 +93,15 @@ class Trainer:
     def run(self, num_generations):
         history = {'best': [], 'average': []}
         best_gen, self.best_chromosome, self.best_fitness = 0, None, -float('inf')
-        start = time()
 
         fitness = np.array([
             self.fitness_function(pop) for pop in self.population
         ])
 
+        start = time()
+
         for gen in range(num_generations):
+            start_gen = time()
             parents_indices = self.selection(self.population, fitness_values=fitness)
             parents = self.population[parents_indices].copy()
             offsprings = []
@@ -123,8 +125,9 @@ class Trainer:
             ])
 
             best_fitness_this_gen, average_fitness = fitness.max(), fitness.mean()
+            finish_gen = time()
             msg = ' ---- '.join([
-                f'Iteration [{gen}]',
+                f'Iteration [{gen}] - {finish_gen - start_gen:.2f}s',
                 f'Best fitness: {best_fitness_this_gen:.4f}',
                 f'Average fitness: {average_fitness:.4f}'
             ])
