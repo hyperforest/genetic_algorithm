@@ -26,7 +26,7 @@ class RouletteWheelSelection(Selection):
             index = np.random.choice(np.arange(pop_size), p=prob)
             parents_indices.append(index)
 
-        return parents_indices
+        return population[parents_indices].copy()
 
 
 class TournamentSelection(Selection):
@@ -43,5 +43,5 @@ class TournamentSelection(Selection):
             best_index = fitness_values[indices].argmax()
             parents_indices.append(indices[best_index])
 
-        return parents_indices
+        return population[parents_indices].copy()
 
