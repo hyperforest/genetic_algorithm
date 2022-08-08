@@ -4,7 +4,7 @@ import numpy as np
 
 
 class Crossover:
-    def __init__(self, seed=None) -> None:
+    def __init__(self) -> None:
         pass
 
     def __call__(self, ch1, ch2):

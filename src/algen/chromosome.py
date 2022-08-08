@@ -12,6 +12,9 @@ def _check_genotype_is_array(genotype):
 
 
 class Chromosome:
+    '''Base class for Chromosome with genotype of Numpy array.
+    Should not be directly used. Instead, create a subclass for this class.
+    '''
     def __init__(self) -> None:
         pass
 
@@ -23,9 +26,13 @@ class Chromosome:
 
 
 class BinaryChromosome(Chromosome):
+    '''Chromosome with genotype of binary (0/1) Numpy array.
+    '''
     def __init__(self, length) -> None:
         super().__init__()
         self.length = length
+
+        self.build_genotype()
 
     def build_genotype(self, genotype=None):
         if not isinstance(genotype, type(None)):
@@ -34,13 +41,22 @@ class BinaryChromosome(Chromosome):
         else:
             self.genotype = np.random.randint(2, size=self.length)
 
+    def __repr__(self):
+        repr = ''.join([
+            f'BinaryChromosome(length={self.length}, '
+            f'genotype={self.genotype.__repr__()}'
+        ])
+        return repr
+
     
 class IntegerChromosome(Chromosome):
-    def __init__(self, length, min_value=0, max_value=(2 ** 31)) -> None:
+    def __init__(self, length, min_value=None, max_value=None) -> None:
         super().__init__()
         self.length = length
-        self.min_value = min_value
-        self.max_value = max_value
+        self.min_value = min_value or 1
+        self.max_value = max_value or (2 ** 31 - 1)
+
+        self.build_genotype()
 
     def build_genotype(self, genotype=None):
         if not isinstance(genotype, type(None)):
@@ -51,13 +67,24 @@ class IntegerChromosome(Chromosome):
                                               high=self.max_value,
                                               size=self.length)
 
+    def __repr__(self):
+        repr = ''.join([
+            f'IntegerChromosome(length={self.length}, '
+            f'min_value={self.min_value}, '
+            f'max_value={self.max_value}, '
+            f'genotype={self.genotype.__repr__()}'
+        ])
+        return repr
+
 
 class RealNumberChromosome(Chromosome):
-    def __init__(self, length, min_value=0., max_value=1.) -> None:
+    def __init__(self, length, min_value=None, max_value=None) -> None:
         super().__init__()
         self.length = length
-        self.min_value = min_value
-        self.max_value = max_value
+        self.min_value = min_value or 0.
+        self.max_value = max_value or 1.
+
+        self.build_genotype()
 
     def build_genotype(self, genotype=None):
         if not isinstance(genotype, type(None)):
@@ -69,11 +96,22 @@ class RealNumberChromosome(Chromosome):
                 + self.min_value
             )
 
+    def __repr__(self):
+        repr = ''.join([
+            f'RealNumberChromosome(length={self.length}, '
+            f'min_value={self.min_value}, '
+            f'max_value={self.max_value}, '
+            f'genotype={self.genotype.__repr__()}'
+        ])
+        return repr
+
 
 class PermutationChromosome(Chromosome):
     def __init__(self, length) -> None:
         super().__init__()
         self.length = length
+
+        self.build_genotype()
 
     def build_genotype(self, genotype=None):
         if not isinstance(genotype, type(None)):
@@ -81,4 +119,11 @@ class PermutationChromosome(Chromosome):
             self.genotype = genotype
         else:
             self.genotype = np.random.permutation(self.length)
+
+    def __repr__(self):
+        repr = ''.join([
+            f'PermutationChromosome(length={self.length}, '
+            f'genotype={self.genotype.__repr__()}'
+        ])
+        return repr
 

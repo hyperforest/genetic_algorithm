@@ -2,16 +2,81 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from chromosome import BinaryChromosome, IntegerChromosome, PermutationChromosome, RealNumberChromosome
-from crossover import PartiallyMappedCrossover, TwoPointCrossover
-from mutation import BitFlipMutation, SwapMutation
-from selection import RouletteWheelSelection, TournamentSelection
+from .chromosome import BinaryChromosome, IntegerChromosome, PermutationChromosome, RealNumberChromosome
+from .crossover import PartiallyMappedCrossover, TwoPointCrossover
+from .mutation import BitFlipMutation, SwapMutation
+from .selection import RouletteWheelSelection, TournamentSelection
 
 class Trainer:
-    def __init__(self,
-        chromosome_type,
-        chromosome_length,
+    '''Class to run a genetic algorithm.
+
+    Arguments
+    ---------
+
+    - fitness_function : a callable which takes a Chromosome object as a parameter
+        and returns a scalar value (greater fitness value means better chromosome,
+        see example)
+
+    - chromosome_type : str in {'binary', 'integer', 'real', 'permutation'},
+        default 'binary'. Built-in chromosome type to be used. Ignored when parameter
+        `population` is set.
+
+    - population : None, or Numpy array of custom Chromosome object.
+        Pre-defined population. Useful when a custom Chromosome object is used.
+        If so, a Numpy array of shape `(pop_size,)` is expected
+
+    - chromosome_length : int, the length of chromosome genotype (default 10).
+        Ignored when parameter `population` is set
+
+    - pop_size : int (default 10). The population size.
+        Ignored when parameter `population` is set
+
+    - selection : a custom Selection object, or str in {'rws', 'tournament'}
+        (default 'rws'). The selection method used to generate parents for crossover.
+        - `'rws'` : Roulette Wheel Selection
+        - `'tournament'` : Tournament selection with tournament size of 2
+
+    - crossover : str or a Crossover object (default `auto`).
+        If 'auto':
+        - if `chromosome_type` is in {'binary', 'integer', 'real'}, two-point
+            crossover will be used
+        - if `chromosome_type` is 'permutation`, partially-mapped crossover
+            (PMX) will be used
+        Should be set to custom Crossover object if custom Chromosome is used.
+
+    - mutation : str or a Mutation object (default `auto`).
+        If 'auto':
+        - if `chromosome_type` is in {'integer', 'real', 'permutation}, swap
+            mutation will be used
+        - if `chromosome_type` is 'binary`, bit-flip mutation will be used
+        Should be set to custom Mutation object if custom Chromosome is used.
+
+    - crossover_rate : float, the crossover rate (default 0.9).
+
+    - mutation_rate : float, the mutation rate (default 0.1).
+
+    - min_value : None, or int or float. The minimum value for chromosome genotype
+        (default None).
+        - If `chromosome_type` is 'integer', `min_value` will be set to 1
+        - If `chromosome_type` is 'real', `min_value` will be set to 0
+        Otherwise, this parameter will be ignored
+
+    - max_value : None, or int or float. The maximum value for chromosome genotype
+        (default None).
+        - If `chromosome_type` is 'integer', `max_value` will be set to 2 ** 31 - 1
+        - If `chromosome_type` is 'real', `max_value` will be set to 1
+        Otherwise, this parameter will be ignored
+
+    - seed : None, or int (default None). The seed of randomness. Set to int
+        if reproducibility for each run is desired.
+    '''
+
+    def __init__(
+        self,
         fitness_function,
+        chromosome_type='binary',
+        population=None,
+        chromosome_length=10,
         pop_size=10,
         selection='rws',
         crossover='auto',
@@ -20,13 +85,12 @@ class Trainer:
         mutation_rate=0.1,
         min_value=None,
         max_value=None,
-        seed=None,
-        population=None
-    ) -> None:
-
-        self.chromosome_type = chromosome_type
-        self.chromosome_length = chromosome_length
+        seed=None
+    ):
         self.fitness_function = fitness_function
+        self.chromosome_type = chromosome_type
+        self.population = population
+        self.chromosome_length = chromosome_length
         self.pop_size = pop_size
         self.selection = selection
         self.crossover = crossover
@@ -36,11 +100,20 @@ class Trainer:
         self.min_value = min_value
         self.max_value = max_value
         self.seed = seed
-        self.population = population
 
         np.random.seed(seed)
         self.populate()
         self.build_operators()
+
+    def __repr__(self):
+        repr = '\n'.join([
+            f'Trainer(',
+            f'  chromosome_type={self.chromosome_type},',
+            f'  population={self.population},',
+            f'  chromosome_length={self.chromosome_length},'
+        ])
+
+        return repr
 
     def populate(self):
         if self.chromosome_type == 'binary':
@@ -69,9 +142,6 @@ class Trainer:
                 PermutationChromosome(length=self.chromosome_length)
                 for _ in range(self.pop_size)
             ])
-
-        for _ in range(self.pop_size):
-            self.population[_].build_genotype()
 
     def build_operators(self):
         if self.selection == 'rws':
@@ -172,7 +242,7 @@ class Trainer:
         self._ever_run = True
         self.history['total_runtime'] = elapsed_time.seconds
         self.history['avg_runtime'] = elapsed_time.seconds / num_generations
-        self.history['result'].reset_index(drop=True)
+        self.history['result'].reset_index(drop=True, inplace=True)
 
         return self.history
 

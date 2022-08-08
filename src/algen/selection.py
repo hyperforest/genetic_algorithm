@@ -8,6 +8,7 @@ class Selection:
     def __call__(self, population) -> None:
         pass
 
+
 class RouletteWheelSelection(Selection):
     def __init__(self) -> None:
         super().__init__()
@@ -28,6 +29,9 @@ class RouletteWheelSelection(Selection):
 
         return population[parents_indices].copy()
 
+    def __repr__(self):
+        return 'RouletteWheelSelection()'
+
 
 class TournamentSelection(Selection):
     def __init__(self, tournament_size=2) -> None:
@@ -44,4 +48,7 @@ class TournamentSelection(Selection):
             parents_indices.append(indices[best_index])
 
         return population[parents_indices].copy()
+
+    def __repr__(self):
+        return f'TournamentSelection(tournament_size={self.tournament_size})'
 
