@@ -1,6 +1,12 @@
 import numpy as np
 
 
+BINARY_CHTYPE = 'binary'
+INTEGER_CHTYPE = 'integer'
+REAL_CHTYPE = 'real'
+PERMUTATION_CHTYPE = 'permutation'
+
+
 def _check_genotype_is_array(genotype):
     ok = isinstance(genotype, list)
     if isinstance(genotype, np.ndarray):
@@ -15,7 +21,7 @@ class Chromosome:
     '''Base class for Chromosome with genotype of Numpy array.
     Should not be directly used. Instead, create a subclass for this class.
     '''
-    def __init__(self) -> None:
+    def __init__(self, **kwargs) -> None:
         pass
 
     def build_genotype(self, genotype=None):
@@ -28,8 +34,8 @@ class Chromosome:
 class BinaryChromosome(Chromosome):
     '''Chromosome with genotype of binary (0/1) Numpy array.
     '''
-    def __init__(self, length) -> None:
-        super().__init__()
+    def __init__(self, length, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.length = length
 
         self.build_genotype()
@@ -50,8 +56,8 @@ class BinaryChromosome(Chromosome):
 
     
 class IntegerChromosome(Chromosome):
-    def __init__(self, length, min_value=None, max_value=None) -> None:
-        super().__init__()
+    def __init__(self, length, min_value=None, max_value=None, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.length = length
         self.min_value = min_value or 1
         self.max_value = max_value or (2 ** 31 - 1)
@@ -78,8 +84,8 @@ class IntegerChromosome(Chromosome):
 
 
 class RealNumberChromosome(Chromosome):
-    def __init__(self, length, min_value=None, max_value=None) -> None:
-        super().__init__()
+    def __init__(self, length, min_value=None, max_value=None, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.length = length
         self.min_value = min_value or 0.
         self.max_value = max_value or 1.
@@ -107,8 +113,8 @@ class RealNumberChromosome(Chromosome):
 
 
 class PermutationChromosome(Chromosome):
-    def __init__(self, length) -> None:
-        super().__init__()
+    def __init__(self, length, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.length = length
 
         self.build_genotype()
@@ -127,3 +133,14 @@ class PermutationChromosome(Chromosome):
         ])
         return repr
 
+
+__all__ = {
+    BINARY_CHTYPE: BinaryChromosome,
+    INTEGER_CHTYPE: IntegerChromosome,
+    REAL_CHTYPE: RealNumberChromosome,
+    PERMUTATION_CHTYPE: PermutationChromosome
+}
+
+
+def get_chromosome_by_name(chromosome_name):
+    return __all__[chromosome_name]

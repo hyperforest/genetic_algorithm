@@ -1,7 +1,7 @@
 - [ ] Add documentation *
 - [ ] Build unittest
 - [ ] Restructure project *
-- [ ] Implement type-checking
+- [ ] Implement type-checking validators
 - [ ] Implement callbacks
 - [ ] Implement custom chromosome
 - [ ] Implement trainer saving

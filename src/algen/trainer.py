@@ -1,11 +1,12 @@
 from datetime import datetime
+from socket import getdefaulttimeout
 import numpy as np
 import pandas as pd
 
-from .chromosome import BinaryChromosome, IntegerChromosome, PermutationChromosome, RealNumberChromosome
-from .crossover import PartiallyMappedCrossover, TwoPointCrossover
-from .mutation import BitFlipMutation, SwapMutation
-from .selection import RouletteWheelSelection, TournamentSelection
+from .chromosome import BinaryChromosome, IntegerChromosome, PermutationChromosome, RealNumberChromosome, get_chromosome_by_name
+from .crossover import Crossover, get_crossover_method_by_name, get_default_crossover_by_chromosome_type
+from .mutation import Mutation, get_default_mutation_by_chromosome_type, get_mutation_method_by_name
+from .selection import Selection, get_selection_method_by_name
 
 class Trainer:
     '''Class to run a genetic algorithm.
@@ -17,39 +18,41 @@ class Trainer:
         and returns a scalar value (greater fitness value means better chromosome,
         see example)
 
-    - chromosome_type : str in {'binary', 'integer', 'real', 'permutation'},
-        default 'binary'. Built-in chromosome type to be used. Ignored when parameter
-        `population` is set.
+    - chromosome_type : None, or str in {'binary', 'integer', 'real', 'permutation'}
+        (default None). Built-in chromosome type to be used.
+        Should be an str if parameter `init_pop` is not specified, otherwise
+        this parameter will be ignored
 
-    - population : None, or Numpy array of custom Chromosome object.
+    - init_pop : None, or Numpy array of custom Chromosome object.
         Pre-defined population. Useful when a custom Chromosome object is used.
         If so, a Numpy array of shape `(pop_size,)` is expected
 
     - chromosome_length : int, the length of chromosome genotype (default 10).
-        Ignored when parameter `population` is set
+        Ignored when parameter `init_pop` is specified
 
     - pop_size : int (default 10). The population size.
-        Ignored when parameter `population` is set
+        Ignored when parameter `init_pop` is specified
 
     - selection : a custom Selection object, or str in {'rws', 'tournament'}
         (default 'rws'). The selection method used to generate parents for crossover.
         - `'rws'` : Roulette Wheel Selection
         - `'tournament'` : Tournament selection with tournament size of 2
 
-    - crossover : str or a Crossover object (default `auto`).
+    - crossover : a custom Crossover object, or str in {'auto', 'one_point',
+        'two_point', 'pmx'} (default `auto`).
         If 'auto':
         - if `chromosome_type` is in {'binary', 'integer', 'real'}, two-point
             crossover will be used
         - if `chromosome_type` is 'permutation`, partially-mapped crossover
             (PMX) will be used
-        Should be set to custom Crossover object if custom Chromosome is used.
+        Should be set to a custom Crossover object if custom Chromosome is used.
 
-    - mutation : str or a Mutation object (default `auto`).
+    - mutation : a Mutation object, or str in {'auto', 'bitflip', 'swap'} (default `auto`).
         If 'auto':
         - if `chromosome_type` is in {'integer', 'real', 'permutation}, swap
             mutation will be used
         - if `chromosome_type` is 'binary`, bit-flip mutation will be used
-        Should be set to custom Mutation object if custom Chromosome is used.
+        Should be set to a custom Mutation object if custom Chromosome is used.
 
     - crossover_rate : float, the crossover rate (default 0.9).
 
@@ -74,8 +77,8 @@ class Trainer:
     def __init__(
         self,
         fitness_function,
-        chromosome_type='binary',
-        population=None,
+        chromosome_type=None,
+        init_pop=None,
         chromosome_length=10,
         pop_size=10,
         selection='rws',
@@ -87,79 +90,94 @@ class Trainer:
         max_value=None,
         seed=None
     ):
+        np.random.seed(seed)
+
         self.fitness_function = fitness_function
-        self.chromosome_type = chromosome_type
-        self.population = population
+        self.chromosome_type_ = chromosome_type
+        self.init_pop_ = init_pop
         self.chromosome_length = chromosome_length
         self.pop_size = pop_size
-        self.selection = selection
-        self.crossover = crossover
-        self.mutation = mutation
+        self.selection_ = selection
+        self.crossover_ = crossover
+        self.mutation_ = mutation
         self.crossover_rate = crossover_rate
         self.mutation_rate = mutation_rate
         self.min_value = min_value
         self.max_value = max_value
         self.seed = seed
 
-        np.random.seed(seed)
         self.populate()
-        self.build_operators()
+        self._build_selection_method()
+        self._build_crossover_method()
+        self._build_mutation_method()
 
     def __repr__(self):
         repr = '\n'.join([
             f'Trainer(',
-            f'  chromosome_type={self.chromosome_type},',
-            f'  population={self.population},',
-            f'  chromosome_length={self.chromosome_length},'
+            f'  chromosome_type={self.chromosome_type_},',
+            f'  chromosome_length={self.chromosome_length}',
+            f'  pop_size={self.pop_size},',
+            f'  selection={self.selection.__repr__()},',
+            f'  crossover={self.crossover.__repr__()},',
+            f'  mutation={self.mutation.__repr__()},',
+            f'  crossover_rate={self.crossover_rate},',
+            f'  mutation_rate={self.mutation_rate},',
+            f'  min_value={self.min_value},',
+            f'  max_value={self.max_value},',
+            f'  seed={self.seed}',
+            f')'
         ])
 
         return repr
 
     def populate(self):
-        if self.chromosome_type == 'binary':
+        if isinstance(self.chromosome_type_, str):
             self.population = np.array([
-                BinaryChromosome(length=self.chromosome_length)
-                for _ in range(self.pop_size)
-            ])
-        elif self.chromosome_type == 'integer':
-            self.population = np.array([
-                IntegerChromosome(
+                get_chromosome_by_name(self.chromosome_type_)(
                     length=self.chromosome_length,
                     min_value=self.min_value,
                     max_value=self.max_value
                 ) for _ in range(self.pop_size)
             ])
-        elif self.chromosome_type == 'real':
-            self.population = np.array([
-                RealNumberChromosome(
-                    length=self.chromosome_length,
-                    min_value=self.min_value,
-                    max_value=self.max_value
-                ) for _ in range(self.pop_size)
-            ])
-        elif self.chromosome_type == 'permutation':
-            self.population = np.array([
-                PermutationChromosome(length=self.chromosome_length)
-                for _ in range(self.pop_size)
-            ])
+        elif isinstance(self.init_pop_, np.ndarray):
+            self.population = self.init_pop_
+        
+    def _build_selection_method(self):
+        if isinstance(self.selection_, str):
+            self.selection = get_selection_method_by_name(self.selection_)()
+        elif isinstance(self.selection_, Selection):
+            self.selection = self.selection_
+        else:
+            msg = f'{self.selection_} is not a valid selection method.'
+            raise TypeError(msg)
 
-    def build_operators(self):
-        if self.selection == 'rws':
-            self.selection = RouletteWheelSelection()
-        elif self.selection == 'tournament':
-            self.selection = TournamentSelection()
+    def _build_crossover_method(self):
+        if isinstance(self.crossover_, str):
+            if self.crossover_ == 'auto':
+                self.crossover = get_default_crossover_by_chromosome_type(
+                    self.chromosome_type_
+                )()
+            else:
+                self.crossover = get_crossover_method_by_name(self.crossover_)()
+        elif isinstance(self.crossover_, Crossover):
+            self.crossover = self.crossover_
+        else:
+            msg = f'{self.crossover_} is not a valid crossover method.'
+            raise TypeError(msg)
 
-        if self.crossover == 'auto':
-            if self.chromosome_type in ('binary', 'integer', 'real'):
-                self.crossover = TwoPointCrossover()
-            elif self.chromosome_type == 'permutation':
-                self.crossover = PartiallyMappedCrossover()
-
-        if self.mutation == 'auto':
-            if self.chromosome_type == 'binary':
-                self.mutation = BitFlipMutation()
-            elif self.chromosome_type in ('integer', 'real', 'permutation'):
-                self.mutation = SwapMutation()
+    def _build_mutation_method(self):
+        if isinstance(self.mutation_, str):
+            if self.mutation_ == 'auto':
+                self.mutation = get_default_mutation_by_chromosome_type(
+                    self.chromosome_type_
+                )()
+            else:
+                self.mutation = get_mutation_method_by_name(self.mutation_)()
+        elif isinstance(self.mutation_, Mutation):
+            self.mutation = self.mutation_
+        else:
+            msg = f'{self.mutation_} is not a valid mutation method.'
+            raise TypeError(msg)
 
     def run(self, num_generations, verbose=2, start_from_gen=0):
         self.best_gen, self.best_chromosome, self.best_fitness = 0, None, -float('inf')

@@ -1,3 +1,4 @@
+from select import select
 import numpy as np
 
 
@@ -52,3 +53,12 @@ class TournamentSelection(Selection):
     def __repr__(self):
         return f'TournamentSelection(tournament_size={self.tournament_size})'
 
+
+__all__ = {
+    'rws': RouletteWheelSelection,
+    'tournament': TournamentSelection
+}
+
+
+def get_selection_method_by_name(selection_name):
+    return __all__[selection_name]

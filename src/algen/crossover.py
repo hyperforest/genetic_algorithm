@@ -3,6 +3,12 @@ from copy import deepcopy
 import numpy as np
 
 
+BINARY_CHTYPE = 'binary'
+INTEGER_CHTYPE = 'integer'
+REAL_CHTYPE = 'real'
+PERMUTATION_CHTYPE = 'permutation'
+
+
 class Crossover:
     def __init__(self) -> None:
         pass
@@ -26,6 +32,9 @@ class OnePointCrossover(Crossover):
 
         return ch1_, ch2_
 
+    def __repr__(self):
+        return 'OnePointCrossover()'
+
 
 class TwoPointCrossover(Crossover):
     def __init__(self) -> None:
@@ -43,6 +52,9 @@ class TwoPointCrossover(Crossover):
         ch2_.genotype[p1:p2] = temp
 
         return ch1_, ch2_
+
+    def __repr__(self):
+        return 'TwoPointCrossover()'
 
 
 class PartiallyMappedCrossover(Crossover):
@@ -93,3 +105,28 @@ class PartiallyMappedCrossover(Crossover):
 
         return ch1_, ch2_
 
+    def __repr__(self):
+        return 'PartiallyMappedCrossover()'
+
+
+__all__ = {
+    'one_point': OnePointCrossover,
+    'two_point': TwoPointCrossover,
+    'pmx': PartiallyMappedCrossover
+}
+
+
+_default_crossover_by_chromosome_type = {
+    BINARY_CHTYPE: TwoPointCrossover,
+    INTEGER_CHTYPE: TwoPointCrossover,
+    REAL_CHTYPE: TwoPointCrossover,
+    PERMUTATION_CHTYPE: PartiallyMappedCrossover
+}
+
+
+def get_crossover_method_by_name(crossover_name):
+    return __all__[crossover_name]
+
+
+def get_default_crossover_by_chromosome_type(chromosome_type):
+    return _default_crossover_by_chromosome_type[chromosome_type]

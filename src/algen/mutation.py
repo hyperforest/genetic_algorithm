@@ -3,6 +3,12 @@ from copy import deepcopy
 import numpy as np
 
 
+BINARY_CHTYPE = 'binary'
+INTEGER_CHTYPE = 'integer'
+REAL_CHTYPE = 'real'
+PERMUTATION_CHTYPE = 'permutation'
+
+
 class Mutation:
     def __init__(self) -> None:
         pass
@@ -23,6 +29,9 @@ class BitFlipMutation(Mutation):
 
         return ch
 
+    def __repr__(self):
+        return 'BitFlipMutation()'
+
 
 class SwapMutation(Mutation):
     def __init__(self) -> None:
@@ -39,3 +48,27 @@ class SwapMutation(Mutation):
 
         return ch
 
+    def __repr__(self):
+        return 'SwapMutation()'
+
+
+__all__ = {
+    'bitflip': BitFlipMutation,
+    'swap': SwapMutation
+}
+
+
+_default_mutation_by_chromosome_type = {
+    BINARY_CHTYPE: BitFlipMutation,
+    INTEGER_CHTYPE: SwapMutation,
+    REAL_CHTYPE: SwapMutation,
+    PERMUTATION_CHTYPE: SwapMutation
+}
+
+
+def get_mutation_method_by_name(mutation_name):
+    return __all__[mutation_name]
+
+
+def get_default_mutation_by_chromosome_type(chromosome_type):
+    return _default_mutation_by_chromosome_type[chromosome_type]
