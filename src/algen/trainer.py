@@ -1,9 +1,10 @@
 from datetime import datetime
-from socket import getdefaulttimeout
 import numpy as np
 import pandas as pd
 
-from .chromosome import BinaryChromosome, IntegerChromosome, PermutationChromosome, RealNumberChromosome, get_chromosome_by_name
+from algen.callbacks import CallbackList, History, TimeReporter
+
+from .chromosome import get_chromosome_by_name
 from .crossover import Crossover, get_crossover_method_by_name, get_default_crossover_by_chromosome_type
 from .mutation import Mutation, get_default_mutation_by_chromosome_type, get_mutation_method_by_name
 from .selection import Selection, get_selection_method_by_name
@@ -30,7 +31,7 @@ class Trainer:
     - chromosome_length : int, the length of chromosome genotype (default 10).
         Ignored when parameter `init_pop` is specified
 
-    - pop_size : int (default 10). The population size.
+    - pop_size : int (default 10). The population size, should be an even number.
         Ignored when parameter `init_pop` is specified
 
     - selection : a custom Selection object, or str in {'rws', 'tournament'}
@@ -112,21 +113,20 @@ class Trainer:
         self._build_mutation_method()
 
     def __repr__(self):
-        repr = '\n'.join([
-            f'Trainer(',
-            f'  chromosome_type={self.chromosome_type_},',
-            f'  chromosome_length={self.chromosome_length}',
-            f'  pop_size={self.pop_size},',
-            f'  selection={self.selection.__repr__()},',
-            f'  crossover={self.crossover.__repr__()},',
-            f'  mutation={self.mutation.__repr__()},',
-            f'  crossover_rate={self.crossover_rate},',
-            f'  mutation_rate={self.mutation_rate},',
-            f'  min_value={self.min_value},',
-            f'  max_value={self.max_value},',
-            f'  seed={self.seed}',
-            f')'
+        repr = ',\n\t'.join([
+            f'chromosome_type={self.chromosome_type_}',
+            f'chromosome_length={self.chromosome_length}',
+            f'pop_size={self.pop_size}',
+            f'selection={self.selection.__repr__()}',
+            f'crossover={self.crossover.__repr__()}',
+            f'mutation={self.mutation.__repr__()}',
+            f'crossover_rate={self.crossover_rate}',
+            f'mutation_rate={self.mutation_rate}',
+            f'min_value={self.min_value}',
+            f'max_value={self.max_value}',
+            f'seed={self.seed}'
         ])
+        repr = f'Trainer({repr})'
 
         return repr
 
@@ -179,88 +179,82 @@ class Trainer:
             msg = f'{self.mutation_} is not a valid mutation method.'
             raise TypeError(msg)
 
-    def run(self, num_generations, verbose=2, start_from_gen=0):
-        self.best_gen, self.best_chromosome, self.best_fitness = 0, None, -float('inf')
-        
-        if not getattr(self, '_ever_run', None):
-            self.history = {
-                'result': pd.DataFrame({
-                    'generation': [],
-                    'best': [],
-                    'average': []
-                })
-            }
-
-        fitness = np.array([
+    def calculate_fitness(self):
+        return np.array([
             self.fitness_function(pop) for pop in self.population
         ])
 
-        start = datetime.now()
+    def _single_call_crossover(self, parents):
+        offsprings = []
+        
+        for i in range(0, self.pop_size, 2):
+            r = np.random.rand()
+            if r >= self.crossover_rate:
+                offspring1, offpsring2 = parents[i], parents[i + 1]
+            else:
+                offspring1, offpsring2 = self.crossover(parents[i], parents[i + 1])
+            offsprings.extend([offspring1, offpsring2])
+        
+        return offsprings
+
+    def _single_call_mutation(self, offsprings):
+        r = np.random.randn(len(offsprings))
+        indices = np.where(r < self.mutation_rate)[0]
+        for index in indices:
+            offsprings[index] = self.mutation(offsprings[index])
+        return offsprings
+
+    def run(self, num_generations, verbose=2, callbacks=None, start_from_gen=0):
+        callbacks = callbacks or []
+        callbacks = CallbackList(callbacks)
+        callbacks.extend([
+            History(verbose=verbose),
+            TimeReporter(verbose=verbose)
+        ])
+        callbacks.set_trainer(self)
+
+        fitness = self.calculate_fitness()
+        logs = dict(
+            num_generations=num_generations,
+            population=self.population.copy(),
+            fitness=fitness.copy()
+        )
+        callbacks.on_run_begin(logs=logs)
 
         for gen in range(start_from_gen, start_from_gen + num_generations):
-            start_gen = datetime.now()
+            logs = dict(
+                population=self.population.copy(),
+                fitness=fitness.copy()
+            )
+            callbacks.on_generation_begin(gen=gen, logs=logs)
 
+            callbacks.on_selection_begin(logs=logs)
             parents = self.selection(self.population, fitness_values=fitness)
+            callbacks.on_selection_end(parents=parents, logs=logs)
+
+            callbacks.on_crossover_begin(parents=parents, logs=logs)
+            offsprings = self._single_call_crossover(parents)
+            callbacks.on_crossover_end(offsprings=offsprings, logs=logs)
+
+            callbacks.on_mutation_begin(offsprings=offsprings, logs=logs)
+            offsprings = self._single_call_mutation(offsprings)
+            callbacks.on_mutation_end(offsprings=offsprings, logs=logs)
             
-            offsprings = []
-            for i in range(0, self.pop_size - (self.pop_size % 2), 2):
-                r = np.random.rand()
-                if r >= self.crossover_rate:
-                    offspring1, offpsring2 = parents[i], parents[i + 1]
-                else:
-                    offspring1, offpsring2 = self.crossover(parents[i], parents[i + 1])
-                offsprings.extend([offspring1, offpsring2])
-
-            r = np.random.randn(len(offsprings))
-            indices = np.where(r < self.mutation_rate)[0]
-            for index in indices:
-                offsprings[index] = self.mutation(offsprings[index])
-
             self.population = np.array(offsprings)
-            fitness = np.array([
-                self.fitness_function(pop) for pop in self.population
-            ])
+            fitness = self.calculate_fitness()
 
-            best_fitness_this_gen, average_fitness = fitness.max(), fitness.mean()
-            finish_gen = datetime.now()
-            gen_time_str = str(finish_gen - start_gen).split('.')[0]
+            logs = dict(
+                population=self.population.copy(),
+                fitness=fitness.copy()
+            )
+            callbacks.on_generation_end(gen=gen, logs=logs)
 
-            if verbose >= 2:
-                msg = ' - '.join([
-                    f'[Generation {gen}] - {gen_time_str}',
-                    f'Best fitness: {best_fitness_this_gen:.4f}',
-                    f'Average fitness: {average_fitness:.4f}'
-                ])
-                print(msg)
-
-            self.history['result'] = pd.concat([
-                self.history['result'], pd.DataFrame({
-                    'generation': [gen],
-                    'best': [best_fitness_this_gen],
-                    'average': [average_fitness]
-                })
-            ])
-
-            if best_fitness_this_gen >= self.best_fitness:
-                self.best_gen = gen
-                self.best_fitness = best_fitness_this_gen
-                self.best_chromosome = self.population[fitness.argmax()]
-
-        finish = datetime.now()
-        elapsed_time = finish - start
-        elapsed_time_str = str(elapsed_time).split('.')[0]
-        average_time = elapsed_time.seconds / num_generations
-
-        if verbose >= 1:
-            print('Best generation :', self.best_gen)
-            print('Best fitness    : %.4f' % self.best_fitness)
-            print('Best chromosome :', self.best_chromosome)
-            print(f'Finished in {elapsed_time_str} (avg {average_time:.2f}s/gen)')
-
-        self._ever_run = True
-        self.history['total_runtime'] = elapsed_time.seconds
-        self.history['avg_runtime'] = elapsed_time.seconds / num_generations
-        self.history['result'].reset_index(drop=True, inplace=True)
+        logs = dict(
+            num_generations=num_generations,
+            population=self.population.copy(),
+            fitness=fitness.copy()
+        )
+        callbacks.on_run_end(logs=logs)
 
         return self.history
 

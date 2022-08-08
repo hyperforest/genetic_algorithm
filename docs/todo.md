@@ -1,10 +1,10 @@
 - [ ] Add documentation *
 - [ ] Build unittest
-- [ ] Restructure project *
+- [x] Restructure project *
 - [ ] Implement type-checking validators
-- [ ] Implement callbacks
+- [x] Implement callbacks
 - [ ] Implement custom chromosome
 - [ ] Implement trainer saving
-- [ ] Implement `__repr__` methods *
+- [x] Implement `__repr__` methods *
 
 **\* = priority**
