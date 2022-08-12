@@ -43,9 +43,12 @@ class TwoPointCrossover(Crossover):
     def __call__(self, ch1, ch2):
         ch1_, ch2_ = deepcopy(ch1), deepcopy(ch2)
         length = len(ch1.genotype)
-        p1, p2 = np.random.choice(range(1, length - 1), 2, replace=False)
-        if p1 > p2:
-            p1, p2 = p2, p1
+        if length <= 2:
+            p1, p2 = 0, 1
+        else:
+            p1, p2 = np.random.choice(range(1, length - 1), 2, replace=False)
+            if p1 > p2:
+                p1, p2 = p2, p1
         
         temp = ch1_.genotype[p1:p2]
         ch1_.genotype[p1:p2] = ch2_.genotype[p1:p2]

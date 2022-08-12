@@ -167,12 +167,12 @@ class History(Callback):
             best_fitness_str = f'{best_fitness}'
             best_fitness_so_far_str = f'{self._best_fitness_so_far}'
             if isinstance(best_fitness, float):
-                best_fitness_str = f'{best_fitness:.4f}',
+                best_fitness_str = f'{best_fitness:.4f}'
                 best_fitness_so_far_str = f'{self._best_fitness_so_far:.4f}'
 
             msg = ' - '.join([
                 f'[Generation {gen}]',
-                f'Average fitness: {average_fitness:.2f}',
+                f'Average fitness: {average_fitness:.4f}',
                 f'Best fitness: {best_fitness_str}',
                 f'Best fitness so far: {best_fitness_so_far_str}'
             ])

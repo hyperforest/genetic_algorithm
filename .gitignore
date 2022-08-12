@@ -130,3 +130,5 @@ dmypy.json
 
 # User-defined
 env_dev/
+src/examples/sample_data/*.zip
+src/examples/sample_data/jcpc-12-final-zonasi/jcpc-12-final-zonasi_*_1.out

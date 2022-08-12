@@ -1,4 +1,5 @@
 from copy import deepcopy
+from hashlib import new
 
 import numpy as np
 
@@ -50,6 +51,47 @@ class SwapMutation(Mutation):
 
     def __repr__(self):
         return 'SwapMutation()'
+
+
+class RadiusMutation(Mutation):
+    def __init__(self, radius=0.1, min_value=0., max_value=1.) -> None:
+        super().__init__()
+        self.radius = radius
+        self.min_value = min_value
+        self.max_value = max_value
+
+    def __call__(self, chromosome):
+        ch = deepcopy(chromosome)
+        length = len(ch.genotype)
+        index = np.random.randint(length)
+        value = ch.genotype[index]
+
+        new_value_1 = max([(1. - self.radius) * value, self.min_value])
+        new_value_2 = min([(1. + self.radius) * value, self.max_value])
+        if new_value_1 > new_value_2:
+            new_value_1, new_value_2 = new_value_2, new_value_1
+        
+        diff = new_value_2 - new_value_1
+        if diff == 0:
+            prob = [0.5, 0.5]
+        else:
+            prob = [(value - new_value_1) / diff, (new_value_2 - value) / diff]
+            prob = np.exp(prob) / np.sum(np.exp(prob))
+        
+        new_value = np.random.choice([new_value_1, new_value_2], p=prob)
+        ch.genotype[index] = new_value
+
+        return ch
+
+    def __repr__(self):
+        repr = ', '.join([
+            f'radius={self.radius}',
+            f'min_value={self.min_value}',
+            f'max_value={self.max_value}'
+        ])
+        repr = f'RadiusMutation({repr})'
+
+        return repr
 
 
 __all__ = {

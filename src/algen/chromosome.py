@@ -25,7 +25,7 @@ class Chromosome:
         pass
 
     def build_genotype(self, genotype=None):
-        raise NotImplementedError('`build_genotype` method has not declared')
+        self.genotype = genotype
 
     def __repr__(self):
         return self.genotype.__repr__()

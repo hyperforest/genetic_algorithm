@@ -16,11 +16,8 @@ class RouletteWheelSelection(Selection):
 
     def __call__(self, population, fitness_values) -> None:
         pop_size = len(population)
-        fitness_sum = np.sum(fitness_values)
-        if fitness_sum != 0:
-            prob = fitness_values / fitness_sum
-        else:
-            prob = np.ones(pop_size, dtype=float) / pop_size
+        exp = np.exp(fitness_values - fitness_values.max())
+        prob = exp / np.sum(exp)
         
         parents_indices = []
 
