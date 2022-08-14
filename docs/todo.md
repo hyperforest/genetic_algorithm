@@ -1,10 +1,22 @@
-- [ ] Add documentation *
-- [ ] Build unittest
-- [x] Restructure project *
-- [ ] Implement type-checking validators
-- [x] Implement callbacks
-- [ ] Implement custom chromosome
-- [ ] Implement trainer saving
-- [x] Implement `__repr__` methods *
+# General
 
 **\* = priority**
+
+- [ ] Build unittest
+- [x] Restructure project *
+- [x] Implement callbacks
+- [x] Implement `__repr__` methods *
+
+
+# Code
+
+- [ ] Implement type-checking validators
+- [ ] Add documentation *
+
+# Feature
+
+- [ ] Custom chromosome *
+- [ ] Trainer saving *
+- [ ] Rate scheduler
+- [ ] Callback: checkpoint
+- [ ] Callback: write to CSV
