@@ -12,7 +12,7 @@ def _check_genotype_is_array(genotype):
     if isinstance(genotype, np.ndarray):
         ok = (genotype.ndim == 1)
     
-    if not ok:
+    if not ok: 
         msg = f'`genotype` should be a list or 1D Numpy array'
         raise TypeError(msg)
 
@@ -59,8 +59,16 @@ class IntegerChromosome(Chromosome):
     def __init__(self, length, min_value=None, max_value=None, **kwargs) -> None:
         super().__init__(**kwargs)
         self.length = length
-        self.min_value = min_value or 1
-        self.max_value = max_value or (2 ** 31 - 1)
+        
+        if min_value == None:
+            self.min_value = 1
+        elif isinstance(min_value, int):
+            self.min_value = min_value
+        
+        if max_value == None:
+            self.max_value = 2 ** 31 - 1
+        elif isinstance(max_value, int):
+            self.max_value = max_value
 
         self.build_genotype()
 
@@ -87,8 +95,16 @@ class RealNumberChromosome(Chromosome):
     def __init__(self, length, min_value=None, max_value=None, **kwargs) -> None:
         super().__init__(**kwargs)
         self.length = length
-        self.min_value = min_value or 0.
-        self.max_value = max_value or 1.
+        
+        if min_value == None:
+            self.min_value = 0.
+        elif isinstance(min_value, int):
+            self.min_value = min_value
+        
+        if max_value == None:
+            self.max_value = 1.
+        elif isinstance(max_value, int):
+            self.max_value = max_value
 
         self.build_genotype()
 
