@@ -52,6 +52,28 @@ class SwapMutation(Mutation):
     def __repr__(self):
         return 'SwapMutation()'
 
+class IntegerMutation(Mutation):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def __call__(self, chromosome):
+        ch = deepcopy(chromosome)
+        length = len(ch.genotype)
+        index = np.random.randint(length)
+
+        cur_val = ch.genotype[index]
+        min_val, max_val = ch.min_value, ch.max_value
+
+        space = np.array(list(range(min_val, cur_val)) + \
+            list(range(cur_val + 1, max_val)))
+        new_val = np.random.choice(space)
+        ch.genotype[index] = new_val
+        
+        return ch
+
+    def __repr__(self):
+        return 'IntegerMutation()'
+
 
 class RadiusMutation(Mutation):
     def __init__(self, radius=0.1, min_value=0., max_value=1.) -> None:

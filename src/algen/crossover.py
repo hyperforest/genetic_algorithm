@@ -60,6 +60,29 @@ class TwoPointCrossover(Crossover):
         return 'TwoPointCrossover()'
 
 
+class UniformCrossover(Crossover):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def __call__(self, ch1, ch2):
+        ch1_, ch2_ = deepcopy(ch1), deepcopy(ch2)
+        length = len(ch1.genotype)
+        if length == 1:
+            return ch1_, ch2_
+        
+        is_switched = (np.random.random((length,)) >= 0.5)
+        for i in range(length):
+            if is_switched[i]:
+                temp = ch1_.genotype[i]
+                ch1_.genotype[i] = ch2_.genotype[i]
+                ch2_.genotype[i] = temp
+
+        return ch1_, ch2_
+
+    def __repr__(self):
+        return 'UniformCrossover()'
+
+
 class PartiallyMappedCrossover(Crossover):
     def __init__(self) -> None:
         super().__init__()
